@@ -1,108 +1,92 @@
-let btnRef = document.querySelectorAll(".button-option");
-let popupRef = document.querySelector(".popup");
-let newgameBtn = document.getElementById("new-game");
-let restartBtn = document.getElementById("restart");
-let msgRef = document.getElementById("message");
-//Winning Pattern Array
-let winningPattern = [
-  [0, 1, 2],
-  [0, 3, 6],
-  [2, 5, 8],
-  [6, 7, 8],
-  [3, 4, 5],
-  [1, 4, 7],
-  [0, 4, 8],
-  [2, 4, 6],
-];
-//Player 'X' plays first
-let xTurn = true;
-let count = 0;
 
-//Disable All Buttons
-const disableButtons = () => {
-  btnRef.forEach((element) => (element.disabled = true));
-  //enable popup
-  popupRef.classList.remove("hide");
-};
+const statusDisplay = document.querySelector('.game--status');
 
-//Enable all buttons (For New Game and Restart)
-const enableButtons = () => {
-  btnRef.forEach((element) => {
-    element.innerText = "";
-    element.disabled = false;
-  });
-  //disable popup
-  popupRef.classList.add("hide");
-};
+let gameActive = true;
 
-//This function is executed when a player wins
-const winFunction = (letter) => {
-  disableButtons();
-  if (letter == "X") {
-    msgRef.innerHTML = "&#x1F389; <br> 'X' Wins";
-  } else {
-    msgRef.innerHTML = "&#x1F389; <br> 'O' Wins";
-  }
-};
+let currentPlayer = "X";
 
-//Function for draw
-const drawFunction = () => {
-  disableButtons();
-  msgRef.innerHTML = "&#x1F60E; <br> It's a Draw";
-};
+let gameState = ["", "", "", "", "", "", "", "", ""];
 
-//New Game
-newgameBtn.addEventListener("click", () => {
-  count = 0;
-  enableButtons();
-});
-restartBtn.addEventListener("click", () => {
-  count = 0;
-  enableButtons();
-});
+const winningMessage = () => `Player ${currentPlayer} has won!`;
+const drawMessage = () => `Game ended in a draw!`;
+const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
 
-//Win Logic
-const winChecker = () => {
-  //Loop through all win patterns
-  for (let i of winningPattern) {
-    let [element1, element2, element3] = [
-      btnRef[i[0]].innerText,
-      btnRef[i[1]].innerText,
-      btnRef[i[2]].innerText,
+statusDisplay.innerHTML = currentPlayerTurn();
+
+document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
+document.querySelector('.game--restart').addEventListener('click', handleRestartGame);
+
+function handleCellClick(clickedCellEvent) {   
+        const clickedCell = clickedCellEvent.target;
+        const clickedCellIndex = parseInt(
+          clickedCell.getAttribute('data-cell-index')
+        );
+    
+        if (gameState[clickedCellIndex] !== "" || !gameActive) {
+            return;
+        }
+   
+        handleCellPlayed(clickedCell, clickedCellIndex);
+        handleResultValidation();
+}
+
+function handleCellPlayed(clickedCell, clickedCellIndex) {
+    
+        gameState[clickedCellIndex] = currentPlayer;
+        clickedCell.innerHTML = currentPlayer;
+    }
+
+    const winningConditions = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
     ];
-    //Check if elements are filled
-    //If 3 empty elements are same and would give win as would
-    if (element1 != "" && (element2 != "") & (element3 != "")) {
-      if (element1 == element2 && element2 == element3) {
-        //If all 3 buttons have same values then pass the value to winFunction
-        winFunction(element1);
-      }
+    function handleResultValidation() {
+        let roundWon = false;
+        for (let i = 0; i <= 7; i++) {
+            const winCondition = winningConditions[i];
+            let a = gameState[winCondition[0]];
+            let b = gameState[winCondition[1]];
+            let c = gameState[winCondition[2]];
+            if (a === '' || b === '' || c === '') {
+                continue;
+            }
+            if (a === b && b === c) {
+                roundWon = true;
+                break
+            }
+        }
+    if (roundWon) {
+        statusDisplay.innerHTML = winningMessage();
+        gameActive = false;
+        return;
     }
-  }
-};
 
-//Display X/O on click
-btnRef.forEach((element) => {
-  element.addEventListener("click", () => {
-    if (xTurn) {
-      xTurn = false;
-      //Display X
-      element.innerText = "X";
-      element.disabled = true;
-    } else {
-      xTurn = true;
-      //Display Y
-      element.innerText = "O";
-      element.disabled = true;
+    let roundDraw = !gameState.includes("");
+    if (roundDraw) {
+        statusDisplay.innerHTML = drawMessage();
+        gameActive = false;
+        return;
     }
-    //Increment count on each click
-    count += 1;
-    if (count == 9) {
-      drawFunction();
-    }
-    //Check for win on every click
-    winChecker();
-  });
-});
-//Enable Buttons and disable popup on page load
-window.onload = enableButtons;
+
+    handlePlayerChange();
+}
+
+function handlePlayerChange() {
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusDisplay.innerHTML = currentPlayerTurn();
+}
+
+function handleRestartGame() {
+    gameActive = true;
+    currentPlayer = "X";
+    gameState = ["", "", "", "", "", "", "", "", ""];
+    statusDisplay.innerHTML = currentPlayerTurn();
+    document.querySelectorAll('.cell')
+               .forEach(cell => cell.innerHTML = "");
+}    
